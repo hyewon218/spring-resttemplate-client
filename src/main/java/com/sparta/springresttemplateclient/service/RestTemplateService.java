@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -98,7 +99,32 @@ public class RestTemplateService {
     }
 
     public List<ItemDto> exchangeCall(String token) {
-        return null;
+        // 요청 URL 만들기
+        URI uri = UriComponentsBuilder
+                .fromUriString("http://localhost:7070")
+                .path("/api/server/exchange-call")
+                .encode()
+                .build()
+                .toUri();
+        log.info("uri = " + uri);
+
+        // RequestBody 쪽에도 JSON 데이터 를 보낼 것이기 때문에 User 객체를 만든다.
+        User user = new User("Robbie", "1234");
+
+        // RequestEntity 를 사용해서 HTTP 에 들어갈 데이터들을 넣고 만들 수 있다.
+        // Request 객체에 담겨온 Header 에 들어있는 데이터 받은 것처럼 서버쪽으로 보낼 때 똑같이 Header 에 담아서 보낸다.
+        RequestEntity<User> requestEntity = RequestEntity
+                // body 가 있으니까 POST 방식
+                .post(uri)
+                // key 에는 headerName , value 에는 headerValue 로  받아온 token 을 넣어준다.
+                .header("X-Authorization", token)
+                // body 부분에 user 넣어준다.
+                .body(user);
+
+        // requestEntity 를 첫번 째 파라미터로 전달을 해주면 exchange() 메서드가 실행이 되면서 requestEntity 정보에 따라서 요청이 서버로 넘어간다.
+        ResponseEntity<String> responseEntity = restTemplate.exchange(requestEntity, String.class);
+
+        return fromJSONtoItems(responseEntity.getBody());
     }
 
     // String 으로 넘어오는 문자열의 정보를 알아야 한다.
@@ -107,7 +133,6 @@ public class RestTemplateService {
         // getJSONArray(items) : 데이터를 다 가지고 와서 JSONArray 에 담는다.
         JSONArray items  = jsonObject.getJSONArray("items");
         List<ItemDto> itemDtoList = new ArrayList<>();
-
 
         // Object item -> {"title":"Mac","price":3888000} 한 줄씩 뽑힘
         for (Object item : items) {
