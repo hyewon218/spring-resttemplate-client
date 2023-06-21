@@ -1,6 +1,7 @@
 package com.sparta.springresttemplateclient.service;
 
 import com.sparta.springresttemplateclient.dto.ItemDto;
+import com.sparta.springresttemplateclient.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -71,7 +72,29 @@ public class RestTemplateService {
     }
 
     public ItemDto postCall(String query) {
-        return null;
+        // 요청 URL 만들기
+        URI uri = UriComponentsBuilder
+                .fromUriString("http://localhost:7070")
+                .path("/api/server/post-call/{query}")
+                .encode()
+                .build()
+                .expand(query)
+                .toUri();
+        log.info("uri = " + uri);
+
+        // 생성자를 사용해 객체를 만든다.
+        User user = new User("Robbie", "1234");
+
+        // (uri, HttpBody 에 넣어줄 데이터, 전달받은 데이터랑 Mapping)
+        // user 객체로 넣어주면 자동으로 JSON 형태로 변환된다.(restTemplate 이 보낼 때도 자동으로 변환해 줌)
+        // ItemDto 로 결과값을 받을 것임
+        ResponseEntity<ItemDto> responseEntity = restTemplate.postForEntity(uri, user, ItemDto.class);
+
+        // 결과가 제대로 왔는지 확인
+        log.info("statusCode = " + responseEntity.getStatusCode());
+
+        // getBody()를 통해서 그 해당하는 데이터 ItemDto 를 가지고 온다.
+        return responseEntity.getBody();
     }
 
     public List<ItemDto> exchangeCall(String token) {
